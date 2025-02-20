@@ -1,9 +1,0 @@
-kind: ClusterRole
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  # Tu peux mettre un nom à ce rôle
-  name: jenkins-admin-role
-rules:
-- apiGroups: [""]
-  resources: ["pods"]
-  verbs: ["get", "list", "create", "update", "delete"]
