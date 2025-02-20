@@ -4,15 +4,16 @@ pipeline {
     environment {
         IMAGE_NAME = "dulcinee/pawapay"
         IMAGE_TAG = "latest"
-        DOCKER_HUB_USER = "dulcinee" // Remplace par ton Docker Hub user
-        KUBE_NAMESPACE = "jenkins" // Change si nécessaire
-        KUBE_CREDENTIALS = "jenkins-role" // Ton credential ID Kubernetes
+        DOCKER_HUB_USER = "dulcinee"
+        DOCKER_HUB_CREDENTIALS = "docker-hub" // Ton ID de credential Docker Hub dans Jenkins
+        KUBE_NAMESPACE = "jenkins"
+        KUBE_CREDENTIALS = "jenkins-role"
     }
 
     stages {
         stage('Checkout Code') {
             steps {
-                git branch: 'main', url: 'https://github.com/Mystoche/pawpay.git'  // Remplace par ton repo
+                git branch: 'main', url: 'https://github.com/Mystoche/pawpay.git'
             }
         }
 
@@ -24,7 +25,13 @@ pipeline {
 
         stage('Run Tests') {
             steps {
-                sh 'npm test || echo "Tests failed but continuing..."'
+                script {
+                    try {
+                        sh 'npm test'
+                    } catch (Exception e) {
+                        echo "⚠️ Tests failed, but continuing..."
+                    }
+                }
             }
         }
 
@@ -42,9 +49,13 @@ pipeline {
 
         stage('Push Docker Image') {
             steps {
-                withCredentials([string(credentialsId: 'docker-hub-password', variable: 'DOCKER_PASSWORD')]) {
-                    sh "echo $DOCKER_PASSWORD | docker login -u ${DOCKER_HUB_USER} --password-stdin"
-                    sh "docker push ${DOCKER_HUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
+                withCredentials([string(credentialsId: "${DOCKER_HUB_CREDENTIALS}", variable: 'DOCKER_PASSWORD')]) {
+                    sh '''
+                        set -e
+                        docker logout || true
+                        echo $DOCKER_PASSWORD | docker login -u ${DOCKER_HUB_USER} --password-stdin
+                        docker push ${DOCKER_HUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}
+                    '''
                 }
             }
         }
@@ -52,8 +63,12 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 withKubeConfig([credentialsId: "${KUBE_CREDENTIALS}"]) {
-                    sh "kubectl apply -f deployment.yaml -n ${KUBE_NAMESPACE}"
-                    sh "kubectl rollout status deployment/deployment -n ${KUBE_NAMESPACE}"
+                    sh '''
+                        set -e
+                        kubectl apply -f deployment.yaml -n ${KUBE_NAMESPACE}
+                        kubectl rollout status deployment/pawapay-deployment -n ${KUBE_NAMESPACE}
+                        kubectl get pods -n ${KUBE_NAMESPACE}
+                    '''
                 }
             }
         }
@@ -64,7 +79,7 @@ pipeline {
             echo '✅ Pipeline exécuté avec succès !'
         }
         failure {
-            echo '❌ Échec du pipeline.'
+            echo '❌ Échec du pipeline. Vérifie les logs !'
         }
     }
 }
