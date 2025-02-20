@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "dulcinee/pawapay"
+        IMAGE_NAME = "pawapay"
         IMAGE_TAG = "latest"
         DOCKER_USER = "dulcinee"
         DOCKER_PASS = 'hub-pipeline'  // Remplacez par votre token Docker Hub
@@ -71,3 +71,4 @@ pipeline {
         }
     }
 }
+
