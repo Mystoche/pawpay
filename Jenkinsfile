@@ -4,8 +4,8 @@ pipeline {
     environment {
         IMAGE_NAME = "dulcinee/pawapay"
         IMAGE_TAG = "latest"
-        DOCKER_HUB_USER = "dulcinee"
-        DOCKER_HUB_CREDENTIALS = "token-docker" // Ton ID de credential Docker Hub dans Jenkins
+        DOCKER_USER = "dulcinee"
+        DOCKER_PASS = 'DockerHub-Token'  // Remplacez par votre token Docker Hub
         KUBE_NAMESPACE = "jenkins"
         KUBE_CREDENTIALS = "jenkins-role"
     }
@@ -13,7 +13,7 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                git branch: 'main', url: 'https://github.com/Mystoche/pawpay.git'
+                git branch: 'main', url: 'https://github.com/Mystoche/pawpay.git'  // Remplacez par votre repo
             }
         }
 
@@ -25,13 +25,7 @@ pipeline {
 
         stage('Run Tests') {
             steps {
-                script {
-                    try {
-                        sh 'npm test'
-                    } catch (Exception e) {
-                        echo "⚠️ Tests failed, but continuing..."
-                    }
-                }
+                sh 'npm test || echo "Tests failed but continuing..."'
             }
         }
 
@@ -43,19 +37,17 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh "docker build -t ${DOCKER_HUB_USER}/${IMAGE_NAME}:${IMAGE_TAG} ."
+                sh "docker build -t ${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG} ."
             }
         }
 
         stage('Push Docker Image') {
             steps {
-                withCredentials([string(credentialsId: "${DOCKER_HUB_CREDENTIALS}", variable: 'DOCKER_PASSWORD')]) {
-                    sh '''
-                        set -e
-                        docker logout || true
-                        echo $DOCKER_PASSWORD | docker login -u ${DOCKER_HUB_USER} --password-stdin
-                        docker push ${DOCKER_HUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}
-                    '''
+                // Utilisation de la variable DOCKER_PASS pour l'authentification
+                withCredentials([string(credentialsId: 'docker-hub-token', variable: 'DOCKER_PASS')]) {
+                    echo "Authentification Docker Hub"
+                    sh "echo $DOCKER_PASS | docker login -u ${DOCKER_USER} --password-stdin"
+                    sh "docker push ${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
                 }
             }
         }
@@ -63,12 +55,8 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 withKubeConfig([credentialsId: "${KUBE_CREDENTIALS}"]) {
-                    sh '''
-                        set -e
-                        kubectl apply -f deployment.yaml -n ${KUBE_NAMESPACE}
-                        kubectl rollout status deployment/pawapay-deployment -n ${KUBE_NAMESPACE}
-                        kubectl get pods -n ${KUBE_NAMESPACE}
-                    '''
+                    sh "kubectl apply -f deployment.yaml -n ${KUBE_NAMESPACE}"
+                    sh "kubectl rollout status deployment/deployment -n ${KUBE_NAMESPACE}"
                 }
             }
         }
