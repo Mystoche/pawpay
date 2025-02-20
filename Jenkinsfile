@@ -5,7 +5,7 @@ pipeline {
         IMAGE_NAME = "dulcinee/pawapay"
         IMAGE_TAG = "latest"
         DOCKER_HUB_USER = "dulcinee"
-        DOCKER_HUB_CREDENTIALS = "docker-hub" // Ton ID de credential Docker Hub dans Jenkins
+        DOCKER_HUB_CREDENTIALS = "token-docker" // Ton ID de credential Docker Hub dans Jenkins
         KUBE_NAMESPACE = "jenkins"
         KUBE_CREDENTIALS = "jenkins-role"
     }
