@@ -7,7 +7,7 @@ pipeline {
         DOCKER_USER = "dulcinee"
         DOCKER_PASS = 'hub-pipeline'  // Remplacez par votre token Docker Hub
         KUBE_NAMESPACE = "jenkins"
-        KUBE_CREDENTIALS = "k8s-pipeline"
+        KUBE_CREDENTIALS = "jjenkin-k8s"
     }
 
     stages {
