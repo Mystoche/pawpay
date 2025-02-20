@@ -52,8 +52,8 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 withKubeConfig([credentialsId: "${KUBE_CREDENTIALS}"]) {
-                    sh "kubectl apply -f pawpay-deployment.yaml -n ${KUBE_NAMESPACE}"
-                    sh "kubectl rollout status deployment/pawpay-deployment -n ${KUBE_NAMESPACE}"
+                    sh "kubectl apply -f deployment.yaml -n ${KUBE_NAMESPACE}"
+                    sh "kubectl rollout status deployment/deployment -n ${KUBE_NAMESPACE}"
                 }
             }
         }
