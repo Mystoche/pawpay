@@ -5,7 +5,7 @@ pipeline {
         IMAGE_NAME = "pawapay"
         IMAGE_TAG = "latest"
         DOCKER_USER = "dulcinee"
-        DOCKER_PASS = 'hub-pipeline'  // Remplacez par votre token Docker Hub
+        DOCKER_PASS = 'hub-pipeline'
         KUBE_NAMESPACE = "jenkins"
         KUBE_CREDENTIALS = "jjenkin-k8s"
     }
@@ -13,7 +13,7 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                git branch: 'main', url: 'https://github.com/Mystoche/pawpay.git'  // Remplacez par votre repo
+                git branch: 'main', url: 'https://github.com/Mystoche/pawpay.git'
             }
         }
 
@@ -43,7 +43,7 @@ pipeline {
 
         stage('Push Docker Image') {
             steps {
-                // Utilisation de la variable DOCKER_PASS pour l'authentification
+                
                 withCredentials([string(credentialsId: 'hub-pipeline', variable: 'DOCKER_PASS')]) {
                     echo "Authentification Docker Hub"
                     sh "echo $DOCKER_PASS | docker login -u ${DOCKER_USER} --password-stdin"
@@ -51,6 +51,42 @@ pipeline {
                 }
             }
         }
+
+        stage('Sonarqube Analyze of vulnerability') {
+
+            steps {
+                withSonarQubeEnv('SonarQube-Server') {
+                    sh '''$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=pawapay \
+                    -Dsonar.projectKey=pawapaye'''
+                }
+            }
+        }
+
+        stage("Quality Gate") {
+
+            steps {
+                script {
+                    waitForQualityGate abortPipeline: false, credentialsId: 'sonarqube'
+                }
+            }
+        }
+
+        stage('TRIVY FS SCAN') {
+
+            steps {
+
+		sh '''
+        		# Installer Trivy
+	  
+        		wget https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.56.2_Linux-64bit.deb
+        		dpkg -i trivy_0.56.2_Linux-64bit.deb
+	  		trivy fs . > trivyfs.txt
+       		   '''
+		    
+            }
+        }
+
+
 
         stage('Deploy to Kubernetes') {
         
@@ -71,10 +107,10 @@ pipeline {
 
     post {
         success {
-            echo '✅ Pipeline exécuté avec succès !'
+            echo ' Pipeline exécuté avec succès !'
         }
         failure {
-            echo '❌ Échec du pipeline. Vérifie les logs !'
+            echo ' Échec du pipeline. Vérifie les logs !'
         }
     }
 }
