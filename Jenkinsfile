@@ -55,7 +55,7 @@ pipeline {
         stage('Sonarqube Analyze of vulnerability') {
 
             steps {
-                withSonarQubeEnv('SonarQube-Server') {
+                withSonarQubeEnv('sonarqube') {
                     sh '''$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=pawapay \
                     -Dsonar.projectKey=pawapaye'''
                 }
