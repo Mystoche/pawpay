@@ -61,7 +61,7 @@ pipeline {
                         credentialsId: 'k8s-jenkins', 
                         serverUrl: 'https://192.168.49.2:8443'
                     ) {
-                        sh 'kubectl apply -f deployment.yaml'
+                        sh "kubectl apply -f deployment.yaml -n ${KUBE_NAMESPACE}"
                     }
                 }
             }
