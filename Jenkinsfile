@@ -81,10 +81,6 @@ pipeline {
             steps {
 
 		sh '''
-        		# Installer Trivy
-	  
-                wget https://github.com/aquasecurity/trivy/releases/download/v0.59.1/trivy_0.59.1_Linux-64bit.deb
-                dpkg -i trivy_0.59.1_Linux-64bit.deb
 	  		    trivy fs . > trivyfs.txt
        		   '''
 		    
