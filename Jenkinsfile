@@ -52,23 +52,12 @@ pipeline {
             }
         }
 
-
-        stage('SonarQube Analysis') {
-            steps {
-                script {
-                    withSonarQubeEnv('sonarqube') {
-                        sh 'sonar-scanner'
-                    }
-                }
-            }
-        }
-
         stage('Sonarqube Analyze of vulnerability') {
 
             steps {
-                withSonarQubeEnv('sonarqube') {
+                withSonarQubeEnv('SonarQube-Server') {
                     sh '''$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=pawapay \
-                    -Dsonar.projectKey=pawapaye'''
+                    -Dsonar.projectKey=pawapay'''
                 }
             }
         }
