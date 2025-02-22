@@ -9,7 +9,7 @@ pipeline {
     environment {
         IMAGE_NAME = "pawapay"
         IMAGE_TAG = "latest"
-        DOCKER_USER = "dulcininee"
+        DOCKER_USER = "dulcinee"
         DOCKER_PASS = 'hub-pipeline'
         KUBE_NAMESPACE = "jenkins"
         KUBE_CREDENTIALS = "jjenkin-k8s"
@@ -20,7 +20,7 @@ pipeline {
             steps {
                 script {
                     // Send the initial email at the start
-                    mail bcc: '', body: 'Pipeline automatique a commencé.', subject: 'Pipeline Started', to: 'dulcinmefo@gmail.com'
+                    mail bcc: '', body: 'Pipeline automatique a commencé.', subject: 'Pipeline Started', to: 'dulcinemfo@gmail.com'
                     echo 'Pipeline automatique a commencé.'
                 }
             }
@@ -115,11 +115,11 @@ pipeline {
 
     post {
         success {
-            mail bcc: '', body: 'Pipeline succeeded', subject: 'Pipeline Success', to: 'dulcinmefo@gmail.com'
+            mail bcc: '', body: 'Pipeline succeeded', subject: 'Pipeline Success', to: 'dulcinemfo@gmail.com'
             echo 'Pipeline executed successfully!'
         }
         failure {
-            mail bcc: '', body: 'Pipeline failed', subject: 'Pipeline Failure', to: 'dulcinmefo@gmail.com'
+            mail bcc: '', body: 'Pipeline failed', subject: 'Pipeline Failure', to: 'dulcinemfo@gmail.com'
             echo 'Pipeline failed. Check the logs!'
         }
     }
