@@ -1,0 +1,23 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Hello') {
+            steps {
+                script {
+                    // Your steps for the "Hello" stage
+                    echo 'Test'
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            mail bcc: '', body: 'Pipeline succeeded', subject: 'Pipeline Success', to: 'dulcinemfo@gmail.com'
+        }
+        failure {
+            mail bcc: '', body: 'Pipeline failed', subject: 'Pipeline Failure', to: 'dulcinemfo@gmail.com'
+        }
+    }
+}
