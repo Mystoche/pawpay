@@ -82,6 +82,7 @@ pipeline {
 
 		sh '''
 	  		    trivy fs . > trivyfs.txt
+                cat trivyfs.txt
        		   '''
 		    
             }
