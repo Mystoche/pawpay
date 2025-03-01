@@ -21,7 +21,7 @@ pipeline {
                 script {
                     // Send the initial email at the start
                     mail bcc: '', body: 'Pipeline automatique a commencé.', subject: 'Pipeline Started', to: 'dulcinemfo@gmail.com'
-                    echo 'Pipeline automatique a commencé.'
+                    echo 'Pipeline automatique a commencé  .'
                 }
             }
         }
