@@ -10,7 +10,7 @@ pipeline {
         IMAGE_NAME = "pawapay"
         IMAGE_TAG = "latest"
         DOCKER_USER = "dulcinee"
-        DOCKER_PASS = 'hub-pipeline'
+        DOCKER_PASS = 'Docker-hub'
         KUBE_NAMESPACE = "jenkins"
         KUBE_CREDENTIALS = "kubernetes"
     }
@@ -58,7 +58,7 @@ pipeline {
 
         stage('Push Docker Image') {
             steps {
-                withCredentials([string(credentialsId: 'hub-pipeline', variable: 'DOCKER_PASS')]) {
+                withCredentials([string(credentialsId: 'Docker-hub', variable: 'DOCKER_PASS')]) {
                     echo "Authentification Docker Hub"
                     sh "echo $DOCKER_PASS | docker login -u ${DOCKER_USER} --password-stdin"
                     sh "docker push ${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
