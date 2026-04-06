@@ -14,7 +14,7 @@ pipeline {
         IMAGE_TAG = "latest"
         DOCKER_USER = "dulcinee"
         KUBE_NAMESPACE = "jenkins"
-        KUBE_CRED_ID = "jenkins-k8s-SA" 
+        KUBE_CRED_ID = "k8s" 
     }
 
     stages {
