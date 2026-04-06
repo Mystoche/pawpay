@@ -79,7 +79,7 @@ pipeline {
                 script {
                     echo "--- Scan de sécurité (Image) ---"
                     try {
-                        sh "docker exec trivy-scan trivy image --severity CRITICAL ${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
+                        sh "docker exec trivy-scan trivy image --severity CRITICAL --exit-code 1 ${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
                     } catch (Exception e) {
                         mail bcc: '', body: "CRITICAL trouvé par Trivy. Stop.", subject: "Trivy Scan: FAILED", to: 'dulcinemfo@gmail.com'
                         error("Le pipeline est arrêté : vulnérabilités critiques.")
@@ -90,7 +90,7 @@ pipeline {
 
         stage('Push Docker Image') {
             steps {
-                withCredentials([string(credentialsId: 'Docker-hub', variable: 'DOCKER_PASS')]) {
+                withCredentials([string(credentialsId: 'docker', variable: 'DOCKER_PASS')]) {
                     sh "echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin"
                     sh "docker push ${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
                 }
