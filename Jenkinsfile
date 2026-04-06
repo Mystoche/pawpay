@@ -4,7 +4,6 @@ pipeline {
     // Cette section télécharge et configure Node.js automatiquement
     tools {
         nodejs 'node20'
-        dockerTool 'docker' // Doit correspondre au nom configuré dans "Global Tool Configuration"
     }
 
     triggers {
