@@ -32,7 +32,7 @@ pipeline {
 
         stage('Checkout GitHub') {
             steps {
-                // On force le checkout ici pour régler l'erreur "not in a git directory"
+                // On force le checkout pour nettoyer les erreurs de répertoire Git précédentes
                 git branch: 'main', 
                     credentialsId: 'jenkis-github-mystoche', 
                     url: 'https://github.com/Mystoche/pawpay.git'
@@ -49,8 +49,9 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 script {
-                    // Vérifie que le nom 'SonarQube-Scanner' est le même dans tes Tools Jenkins
+                    // Doit correspondre au nom dans Manage Jenkins > Tools
                     def scannerHome = tool 'SonarQube-Scanner'
+                    // Doit correspondre au nom dans Manage Jenkins > System
                     withSonarQubeEnv('Sonarqube') { 
                         sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectName=pawapay -Dsonar.projectKey=pawapay"
                     }
@@ -61,7 +62,7 @@ pipeline {
         stage("Quality Gate") {
             steps {
                 script {
-                    // On attend le verdict de SonarQube avant de builder l'image
+                    // Attend que SonarQube renvoie le statut (nécessite le Webhook configuré côté Sonar)
                     waitForQualityGate abortPipeline: true
                 }
             }
@@ -69,7 +70,7 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                // Utilise le socket Docker monté via Terraform
+                // Utilise le binaire docker et le socket injectés via Terraform
                 sh "docker build -t ${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG} ."
             }
         }
@@ -79,10 +80,11 @@ pipeline {
                 script {
                     echo "--- Scan de sécurité (Image) ---"
                     try {
-                        sh "docker exec trivy-scan trivy image --severity CRITICAL ${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
+                        // Utilise le conteneur trivy-scan persistant sur ton nvidianode
+                        sh "docker exec trivy-scan trivy image --severity CRITICAL --exit-code 1 ${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
                     } catch (Exception e) {
-                        mail bcc: '', body: "CRITICAL trouvé par Trivy. Stop.", subject: "Trivy Scan: FAILED", to: 'dulcinemfo@gmail.com'
-                        error("Le pipeline est arrêté : vulnérabilités critiques.")
+                        mail bcc: '', body: "CRITICAL trouvé par Trivy. Déploiement stoppé.", subject: "Trivy Scan: FAILED", to: 'dulcinemfo@gmail.com'
+                        error("Le pipeline est arrêté : vulnérabilités critiques détectées.")
                     }
                 }
             }
@@ -90,8 +92,9 @@ pipeline {
 
         stage('Push Docker Image') {
             steps {
-                withCredentials([string(credentialsId: 'docker', variable: 'DOCKER_PASS')]) {
-                    sh "echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin"
+                // Correction ici : On utilise usernamePassword pour ton credential 'ddocker'
+                withCredentials([usernamePassword(credentialsId: 'ddocker', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER_ID')]) {
+                    sh "echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER_ID} --password-stdin"
                     sh "docker push ${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
                 }
             }
@@ -108,10 +111,10 @@ pipeline {
 
     post {
         success {
-            mail bcc: '', body: "Pipeline SUCCESS : Déployé sur K8s.", subject: 'Pipeline Global Success', to: 'dulcinemfo@gmail.com'
+            mail bcc: '', body: "Pipeline SUCCESS : Déployé sur Kubernetes (nvidianode).", subject: 'Pipeline Global Success', to: 'dulcinemfo@gmail.com'
         }
         failure {
-            echo 'Pipeline failed. Vérifiez les logs.'
+            echo 'Pipeline failed. Vérifiez les logs pour identifier le stage en erreur.'
         }
     }
 }
