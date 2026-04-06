@@ -93,7 +93,7 @@ pipeline {
         stage('Push Docker Image') {
             steps {
                 // Correction ici : On utilise usernamePassword pour ton credential 'ddocker'
-                withCredentials([usernamePassword(credentialsId: 'ddocker', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER_ID')]) {
+                withCredentials([usernamePassword(credentialsId: 'docker', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER_ID')]) {
                     sh "echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER_ID} --password-stdin"
                     sh "docker push ${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
                 }
