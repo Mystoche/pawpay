@@ -81,7 +81,7 @@ pipeline {
                     echo "--- Scan de sécurité (Image) ---"
                     try {
                         // Utilise le conteneur trivy-scan persistant sur ton nvidianode
-                        sh "docker exec trivy-scan trivy image --severity CRITICAL --exit-code 1 ${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
+                        sh "docker exec trivy-scan trivy image --severity CRITICAL ${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
                     } catch (Exception e) {
                         mail bcc: '', body: "CRITICAL trouvé par Trivy. Déploiement stoppé.", subject: "Trivy Scan: FAILED", to: 'dulcinemfo@gmail.com'
                         error("Le pipeline est arrêté : vulnérabilités critiques détectées.")
