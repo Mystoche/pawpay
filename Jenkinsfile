@@ -1,7 +1,6 @@
 pipeline {
     agent any
 
-    // Cette section télécharge et configure Node.js automatiquement
     tools {
         nodejs 'node20'
     }
@@ -22,21 +21,55 @@ pipeline {
         stage('Start Pipeline') {
             steps {
                 script {
-                    // On utilise un try/catch pour que le pipeline ne crash pas si le mail échoue
                     try {
                         mail bcc: '', body: 'Le pipeline automatique a commencé.', subject: 'Pipeline Started', to: 'dulcinemfo@gmail.com'
                     } catch (Exception e) {
-                        echo "L'envoi du mail de démarrage a échoué, mais on continue le build."
+                        echo "L'envoi du mail de démarrage a échoué."
                     }
                 }
             }
         }
 
-        stage('Build & Preparation') {
+        stage('Checkout GitHub') {
             steps {
-                // Le code est déjà récupéré par Jenkins (Checkout SCM)
+                // On force le checkout ici pour régler l'erreur "not in a git directory"
+                git branch: 'main', 
+                    credentialsId: 'jenkis-github-mystoche', 
+                    url: 'https://github.com/Mystoche/pawpay.git'
+            }
+        }
+
+        stage('Install & Build TS') {
+            steps {
                 sh 'npm install'
                 sh 'npx tsc'
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                script {
+                    // Vérifie que le nom 'SonarQube-Scanner' est le même dans tes Tools Jenkins
+                    def scannerHome = tool 'SonarQube-Scanner'
+                    withSonarQubeEnv('Sonarqube') { 
+                        sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectName=pawapay -Dsonar.projectKey=pawapay"
+                    }
+                }
+            }
+        }
+
+        stage("Quality Gate") {
+            steps {
+                script {
+                    // On attend le verdict de SonarQube avant de builder l'image
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                // Utilise le socket Docker monté via Terraform
                 sh "docker build -t ${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG} ."
             }
         }
@@ -46,21 +79,10 @@ pipeline {
                 script {
                     echo "--- Scan de sécurité (Image) ---"
                     try {
-                        // Utilise ton conteneur Terraform trivy-scan
                         sh "docker exec trivy-scan trivy image --severity CRITICAL --exit-code 1 ${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
-                        
-                        // Si 0 CRITICAL
-                        mail bcc: '', 
-                             body: "Le scan Trivy est terminé. Aucune vulnérabilité CRITIQUE trouvée pour l'image ${IMAGE_NAME}.", 
-                             subject: "Trivy Scan: SUCCESS (0 Critical)", 
-                             to: 'dulcinemfo@gmail.com'
                     } catch (Exception e) {
-                        // Si CRITICAL trouvé
-                        mail bcc: '', 
-                             body: "ALERTE SÉCURITÉ : Le scan Trivy a trouvé des vulnérabilités CRITIQUES sur l'image ${IMAGE_NAME}. Le déploiement est stoppé.", 
-                             subject: "Trivy Scan: FAILED (Critical Found)", 
-                             to: 'dulcinemfo@gmail.com'
-                        error("Le pipeline est arrêté car Trivy a trouvé des vulnérabilités critiques.")
+                        mail bcc: '', body: "CRITICAL trouvé par Trivy. Stop.", subject: "Trivy Scan: FAILED", to: 'dulcinemfo@gmail.com'
+                        error("Le pipeline est arrêté : vulnérabilités critiques.")
                     }
                 }
             }
@@ -86,10 +108,10 @@ pipeline {
 
     post {
         success {
-            mail bcc: '', body: "Le pipeline s'est terminé avec succès. L'application est déployée sur Kubernetes.", subject: 'Pipeline Global Success', to: 'dulcinemfo@gmail.com'
+            mail bcc: '', body: "Pipeline SUCCESS : Déployé sur K8s.", subject: 'Pipeline Global Success', to: 'dulcinemfo@gmail.com'
         }
         failure {
-            echo 'Pipeline failed. Vérifiez les logs pour plus de détails.'
+            echo 'Pipeline failed. Vérifiez les logs.'
         }
     }
 }
