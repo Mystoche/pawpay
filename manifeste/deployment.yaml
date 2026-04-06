@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: pawapay
+  namespace: jenkins
 spec:
   replicas: 1
   selector:
@@ -17,11 +18,15 @@ spec:
           image: dulcinee/pawapay
           ports:
             - containerPort: 3000
+          envFrom:
+            - secretRef:
+                name: pawapay-env
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: pawapay-service
+  namespace: jenkins
 spec:
   selector:
     app: pawapay
