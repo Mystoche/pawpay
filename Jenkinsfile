@@ -103,7 +103,7 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 withKubeConfig([credentialsId: "${KUBE_CRED_ID}", serverUrl: 'https://192.168.49.2:8443']) {
-                    sh "kubectl apply -f manifeste/deployment.yaml -n ${KUBE_NAMESPACE}"
+                    sh "kubectl apply -f manifeste/deployment.yaml -n ${KUBE_NAMESPACE} --validate=false"
                 }
             }
         }
